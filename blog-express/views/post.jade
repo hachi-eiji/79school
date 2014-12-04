@@ -1,0 +1,20 @@
+extends layout
+block page
+  - var menu = 'post'
+block content
+  h2 Post an Article
+  div= error
+  div.col-md-8
+    form(action="post", method="POST", role="form")
+      div.form-group
+        label(for="title") Title
+        input#title.form-control(name="title", type="text", placeholder="JavaScript is Good")
+      div.form-group
+        label(for="slug") Slug
+        input#slug.form-control(name="slug", type="text", placeholder="js-good")
+        span.help-block This String will be use in the URL.
+      div.form-group
+        label(for="text") Text
+        textArea#text.form-control(rows="5", name="text", placeholder="text")
+      p
+        button.btn.btn-primary(type="submit") Save

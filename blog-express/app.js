@@ -1,26 +1,62 @@
 'use strict';
-var express = require('express');
-var http = require('http');
-var path = require('path');
+var express = require('express'),
+  http = require('http'),
+  path = require('path'),
+  mongoskin = require('mongoskin'),
+  dbUrl = process.env.MONGOHQ_URL || 'mongodb://@localhost:27017/blog',
+  db = mongoskin.db(dbUrl, {safe: true}),
+  collections = {
+    articles: db.collection('articles'),
+    users: db.collection('users')
+  };
+
+// middleware module
+var session = require('express-session'),
+  logger = require('morgan'), // express4から独立したlogger
+  errorHandler = require('errorhandler'), // development only error handler
+  cookieParser = require('cookie-parser'),
+  bodyParser = require('body-parser'),
+  methodOverrider = require('method-override')
+  ;
 
 
 var app = express();
+app.locals.appTitle = 'blog-express';
 
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-app.get('/login', function(req, res) {
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(methodOverrider());
+app.use(require('stylus').middleware(__dirname + '/public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
+if (app.get('env') === 'development') {
+  app.use(errorHandler());
+}
+
+app.use(function (req, res, next) {
+  if (!collections.articles || collections.users) {
+    return next(new Error('No collections'));
+  }
+  req.collections = collections;
+  return next(); // do not forget !!
+});
+
+app.get('/login', function (req, res) {
   res.render('login', {
     appTitle: "blog-express"
   });
 });
-app.get('/post', function(req, res) {
+app.get('/post', function (req, res) {
   res.render('post', {
     appTitle: "blog-express"
   });
 });
-app.get('/admin', function(req, res) {
+app.get('/admin', function (req, res) {
   var articles = [{
     _id: "aaaaa",
     title: "article title",
@@ -42,7 +78,7 @@ app.get('/admin', function(req, res) {
 });
 
 
-app.all('*', function(req, res) {
+app.all('*', function (req, res) {
   var articles = [{
     title: "article title",
     text: "article content",
@@ -60,14 +96,14 @@ app.all('*', function(req, res) {
 });
 
 var server = http.createServer(app);
-var boot = function() {
-  server.listen(app.get('port'), function() {
+var boot = function () {
+  server.listen(app.get('port'), function () {
     console.log('Express server listening on port ' + app.get('port'));
   });
 };
 
 
-var shutdown = function() {
+var shutdown = function () {
   server.close();
 };
 

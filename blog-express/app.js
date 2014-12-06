@@ -3,6 +3,8 @@ var express = require('express'),
   routes = require('./routes'),
   http = require('http'),
   path = require('path'),
+  cookieParser = require('cookie-parser'),
+  session = require('express-session'),
   mongoskin = require('mongoskin'),
   dbUrl = process.env.MONGOHQ_URL || 'mongodb://@localhost:27017/blog',
   db = mongoskin.db(dbUrl, {safe: true}),
@@ -39,9 +41,26 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
+app.use(cookieParser('hogehoge'));
+app.use(session({secret: 'fugafuga'}));
 app.use(methodOverrider());
 app.use(require('stylus').middleware(__dirname + '/public'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(function (req, res, next) {
+  if (req.session && req.session.admin) {
+    // res.locals はリクエストスコープのオブジェクト
+    res.locals.admin = true;
+  }
+  next();
+});
+
+var authorize = function (req, res, next) {
+  if (req.session && req.session.admin) {
+    return next();
+  }
+  return res.send(401);
+};
 
 if (app.get('env') === 'development') {
   app.use(errorHandler());
@@ -52,12 +71,13 @@ app.get('/', routes.index);
 app.get('/login', routes.user.login);
 app.post('/login', routes.user.authenticate);
 app.get('/logout', routes.user.logout);
-app.get('/admin', routes.article.admin);
+app.get('/admin', authorize, routes.article.admin);
 app.get('/post', routes.article.post);
 app.post('/post', routes.article.postArticle);
 app.get('/articles/:slug', routes.article.show);
 
 // REST API
+app.all('/api', authorize); // authorize /api/*
 app.get('/api/articles', routes.article.list);
 app.post('/api/articles', routes.article.add);
 app.put('/api/articles/:id', routes.article.edit);

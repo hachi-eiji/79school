@@ -67,55 +67,6 @@ app.all('*', function (req, res) {
   res.send(404);
 });
 
-//app.get('/login', function (req, res) {
-//  res.render('login', {
-//    appTitle: "blog-express"
-//  });
-//});
-//app.get('/post', function (req, res) {
-//  res.render('post', {
-//    appTitle: "blog-express"
-//  });
-//});
-//app.get('/admin', function (req, res) {
-//  var articles = [{
-//    _id: "aaaaa",
-//    title: "article title",
-//    text: "article content",
-//    slug: "article-title",
-//    published: true
-//  }, {
-//    _id: "bbbbbb",
-//    title: "article title2",
-//    text: "article content2",
-//    slug: "article-title2",
-//    published: false
-//  }];
-//  var data = {
-//    appTitle: "blog-express",
-//    articles: articles
-//  };
-//  res.render('admin', data);
-//});
-//
-//
-//app.all('*', function (req, res) {
-//  var articles = [{
-//    title: "article title",
-//    text: "article content",
-//    slug: "article-title"
-//  }, {
-//    title: "article title2",
-//    text: "article content2",
-//    slug: "article-title2"
-//  }];
-//  var data = {
-//    articles: articles,
-//    appTitle: "blog-express"
-//  };
-//  res.render('index', data);
-//});
-
 var server = http.createServer(app);
 var boot = function () {
   server.listen(app.get('port'), function () {

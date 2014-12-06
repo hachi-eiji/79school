@@ -27,9 +27,9 @@ describe('server', function () {
         .end(function (res) {
           seedArticles.forEach(function (item, index, list) {
             if (item.published) {
-              expect(res.text).to.be.contain('<h2><a href="/articles"' + item.slug + '">' + item.title);
+              expect(res.text).to.be.contain('<h2><a href="/articles/' + item.slug + '">' + item.title);
             } else {
-              expect(res.text).not.to.contain('<h2><a href="/articles"' + item.slug + '">' + item.title);
+              expect(res.text).not.to.contain('<h2><a href="/articles/' + item.slug + '">' + item.title);
             }
           });
           done();
@@ -47,9 +47,9 @@ describe('server', function () {
           .get('http://localhost:' + port + '/articles/' + seedArticles[index].slug)
           .end(function (res) {
             if (item.published) {
-              expect(res.text).to.be.contain('<h2><a href="/articles"' + item.slug + '">' + item.title);
+              expect(res.text).to.be.contain(seedArticles[index].text);
             } else {
-              expect(res.text).not.to.contain('<h2><a href="/articles"' + item.slug + '">' + item.title);
+              expect(res.status).to.be(401);
             }
             if (index + 1 === n) {
               done();

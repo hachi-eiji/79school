@@ -1,5 +1,6 @@
 'use strict';
 var express = require('express'),
+  routes = require('./routes'),
   http = require('http'),
   path = require('path'),
   mongoskin = require('mongoskin'),
@@ -19,9 +20,17 @@ var session = require('express-session'),
   methodOverrider = require('method-override')
   ;
 
-
 var app = express();
 app.locals.appTitle = 'blog-express';
+
+app.use(function (req, res, next) {
+  if (!collections.articles || !collections.users) {
+    return next(new Error('No collections'));
+  }
+  req.collections = collections;
+  return next(); // do not forget !!
+});
+
 
 app.set('port', process.env.PORT || 3000);
 app.set('views', path.join(__dirname, 'views'));
@@ -38,62 +47,74 @@ if (app.get('env') === 'development') {
   app.use(errorHandler());
 }
 
-app.use(function (req, res, next) {
-  if (!collections.articles || collections.users) {
-    return next(new Error('No collections'));
-  }
-  req.collections = collections;
-  return next(); // do not forget !!
-});
+// pages and routes
+app.get('/', routes.index);
+app.get('/login', routes.user.login);
+app.post('/login', routes.user.authenticate);
+app.get('/logout', routes.user.logout);
+app.get('/admin', routes.article.admin);
+app.get('/post', routes.article.post);
+app.post('/post', routes.article.postArticle);
+app.get('/articles/:slug', routes.article.show);
 
-app.get('/login', function (req, res) {
-  res.render('login', {
-    appTitle: "blog-express"
-  });
-});
-app.get('/post', function (req, res) {
-  res.render('post', {
-    appTitle: "blog-express"
-  });
-});
-app.get('/admin', function (req, res) {
-  var articles = [{
-    _id: "aaaaa",
-    title: "article title",
-    text: "article content",
-    slug: "article-title",
-    published: true
-  }, {
-    _id: "bbbbbb",
-    title: "article title2",
-    text: "article content2",
-    slug: "article-title2",
-    published: false
-  }];
-  var data = {
-    appTitle: "blog-express",
-    articles: articles
-  };
-  res.render('admin', data);
-});
-
+// REST API
+app.get('/api/articles', routes.article.list);
+app.post('/api/articles', routes.article.add);
+app.put('/api/articles/:id', routes.article.edit);
+app.del('/api/articles/:id', routes.article.del);
 
 app.all('*', function (req, res) {
-  var articles = [{
-    title: "article title",
-    text: "article content",
-    slug: "article-title"
-  }, {
-    title: "article title2",
-    text: "article content2",
-    slug: "article-title2"
-  }];
-  var data = {
-    articles: articles,
-    appTitle: "blog-express"
-  };
-  res.render('index', data);
+  res.send(404);
 });
+
+//app.get('/login', function (req, res) {
+//  res.render('login', {
+//    appTitle: "blog-express"
+//  });
+//});
+//app.get('/post', function (req, res) {
+//  res.render('post', {
+//    appTitle: "blog-express"
+//  });
+//});
+//app.get('/admin', function (req, res) {
+//  var articles = [{
+//    _id: "aaaaa",
+//    title: "article title",
+//    text: "article content",
+//    slug: "article-title",
+//    published: true
+//  }, {
+//    _id: "bbbbbb",
+//    title: "article title2",
+//    text: "article content2",
+//    slug: "article-title2",
+//    published: false
+//  }];
+//  var data = {
+//    appTitle: "blog-express",
+//    articles: articles
+//  };
+//  res.render('admin', data);
+//});
+//
+//
+//app.all('*', function (req, res) {
+//  var articles = [{
+//    title: "article title",
+//    text: "article content",
+//    slug: "article-title"
+//  }, {
+//    title: "article title2",
+//    text: "article content2",
+//    slug: "article-title2"
+//  }];
+//  var data = {
+//    articles: articles,
+//    appTitle: "blog-express"
+//  };
+//  res.render('index', data);
+//});
 
 var server = http.createServer(app);
 var boot = function () {

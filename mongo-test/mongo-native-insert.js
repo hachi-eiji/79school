@@ -10,7 +10,7 @@ var db = new Db('local', new Server(dbHost, dbPort, {
 }));
 
 db.open(function(error, dbConnection) {
-  if(error){
+  if (error) {
     console.error(error);
     process.exit(1);
   }
@@ -20,14 +20,39 @@ db.open(function(error, dbConnection) {
     name: 'hachi'
   };
 
-  dbConnection.collection('messages').insert(item, function(error, item){
-    if(error){
+  dbConnection.collection('messages').insert(item, function(error, item) {
+    if (error) {
       console.error(error);
       process.exit(1);
     }
     console.info('created/inserted: ', item);
-    db.close();
-    process.exit(0);
-  });
 
+    dbConnection.collection('messages').findOne({}, function(error, item) {
+      if (error) {
+        console.error(error);
+        process.exit(1);
+      }
+      console.info('findOne: ', item);
+      item.text = 'hi';
+      var id = item._id.toString(); // ID
+      console.log('before saving', item);
+
+      dbConnection.collection('messages').save(item, function(error, item) {
+        if (error) {
+          console.log(error);
+          process.exit();
+        }
+        console.log('save : ', item); // item is null
+
+        dbConnection.collection('messages').find({
+          _id: new mongo.ObjectID(id)
+        }).toArray(function(error, items) {
+          console.info('find: ', items);
+          db.close();
+          process.exit(0);
+        });
+      });
+
+    });
+  });
 });

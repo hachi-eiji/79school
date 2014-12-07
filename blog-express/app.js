@@ -5,13 +5,18 @@ var express = require('express'),
   path = require('path'),
   cookieParser = require('cookie-parser'),
   session = require('express-session'),
+  everyauth = require('everyauth'),
   mongoskin = require('mongoskin'),
   dbUrl = process.env.MONGOHQ_URL || 'mongodb://@localhost:27017/blog',
   db = mongoskin.db(dbUrl, {safe: true}),
   collections = {
     articles: db.collection('articles'),
     users: db.collection('users')
-  };
+  },
+  TWITTER_CONSUMER_KEY = process.env.TWITTER_CONSUMER_KEY,
+  TWITTER_CONSUMER_SECRET = process.env.TWITTER_CONSUMER_SECRET
+  ;
+
 
 // middleware module
 var session = require('express-session'),
@@ -21,6 +26,29 @@ var session = require('express-session'),
   bodyParser = require('body-parser'),
   methodOverrider = require('method-override')
   ;
+
+
+everyauth.debug = true;
+everyauth.twitter
+  .consumerKey(TWITTER_CONSUMER_KEY)
+  .consumerSecret(TWITTER_CONSUMER_SECRET)
+  .findOrCreateUser(function (session, accessToken, accessTokenSecret, twitterUserMetadata) {
+    var promise = this.Promise();
+    process.nextTick(function () {
+      // 実際はDBなどから検索/DBへ保存したいので処理が重くなるので,
+      // process.nextTickを使っている
+      if (twitterUserMetadata.screen_name === 'hachi_eiji') {
+        session.user = twitterUserMetadata;
+        session.admin = true;
+      }
+      promise.fulfill(twitterUserMetadata);
+    });
+    return promise;
+  }).redirectPath('/admin');
+everyauth.everymodule.handleLogout(routes.user.logout);
+everyauth.everymodule.findUserById(function (user, callback) {
+  callback(user);
+});
 
 var app = express();
 app.locals.appTitle = 'blog-express';
@@ -43,6 +71,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser('hogehoge'));
 app.use(session({secret: 'fugafuga'}));
+app.use(everyauth.middleware());
 app.use(methodOverrider());
 app.use(require('stylus').middleware(__dirname + '/public'));
 app.use(express.static(path.join(__dirname, 'public')));

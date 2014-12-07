@@ -20,7 +20,7 @@ exports.authenticate = function (req, res, next) {
   }
 
   // TODO: crypto
-  req.collections.users.findOne({
+  req.models.User.findOne({
     email: req.body.email,
     password: req.body.password
   }, function (error, user) {

@@ -1,18 +1,15 @@
 'use strict';
 var express = require('express'),
   routes = require('./routes'),
+  models = require('./models'),
   http = require('http'),
   path = require('path'),
   cookieParser = require('cookie-parser'),
   session = require('express-session'),
   everyauth = require('everyauth'),
-  mongoskin = require('mongoskin'),
+  mongoose = require('mongoose'),
   dbUrl = process.env.MONGOHQ_URL || 'mongodb://@localhost:27017/blog',
-  db = mongoskin.db(dbUrl, {safe: true}),
-  collections = {
-    articles: db.collection('articles'),
-    users: db.collection('users')
-  },
+  db = mongoose.connect(dbUrl, {safe: true}),
   TWITTER_CONSUMER_KEY = process.env.TWITTER_CONSUMER_KEY,
   TWITTER_CONSUMER_SECRET = process.env.TWITTER_CONSUMER_SECRET
   ;
@@ -54,10 +51,10 @@ var app = express();
 app.locals.appTitle = 'blog-express';
 
 app.use(function (req, res, next) {
-  if (!collections.articles || !collections.users) {
-    return next(new Error('No collections'));
+  if (!(models.Article && models.User)) {
+    return next(new Error('No models'));
   }
-  req.collections = collections;
+  req.models = models;
   return next(); // do not forget !!
 });
 

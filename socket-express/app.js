@@ -1,3 +1,4 @@
+var http = require('http');
 var express = require('express');
 var path = require('path');
 var logger = require('morgan');
@@ -55,5 +56,17 @@ app.use(function (err, req, res, next) {
   });
 });
 
+var server = http.createServer(app);
+var io = require('socket.io').listen(server);
 
-module.exports = app;
+io.sockets.on('connection', function (socket) {
+  socket.on('messageChange', function (data) {
+    console.log(data);
+    socket.emit('receive', data.message.split('').reverse().join(''));
+  });
+});
+
+app.set('port', process.env.PORT || 3000);
+server.listen(app.get('port'), function () {
+  console.log('Express server listening on port' + app.get('port'));
+});
